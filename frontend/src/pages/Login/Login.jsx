@@ -1,0 +1,217 @@
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { loginRequest } from "../../redux/action"; // Update the import
+import styles from "./styles.module.css";
+import { useEffect, useState } from "react";
+
+function Login() {
+  const navigate = useNavigate();
+
+  const dispatch = useDispatch();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { isLoading, error, user } = useSelector((state) => state.auth);
+
+  const [otp, setOtp] = useState("");
+  const [isOtpValid, setIsOtpValid] = useState(false);
+
+  const handleLogin = () => {
+    dispatch(loginRequest({ email, password }));
+  };
+
+  useEffect(() => {
+    if (user) {
+      navigate("/home");
+    }
+  }, [user]);
+
+  const googleAuth = () => {
+    window.open(
+      `${import.meta.env.VITE_BACKEND_URL}/auth/google`, // Removed `/callback` as it's typically for the callback route
+      "_self"
+    );
+  };
+
+  const handleOTP = (e) => {
+    e.preventDefault();
+    // For demonstration, assume OTP is 123456
+    if (otp === "123456") {
+      setIsOtpValid(true);
+      console.log("OTP Validated");
+    } else {
+      alert("Invalid OTP");
+      setIsOtpValid(false);
+    }
+  };
+
+  const handleChangePass = (e) => {
+    e.preventDefault();
+  };
+
+  return (
+    <div className={styles.container}>
+      <h1 className={styles.heading}>Log in Form</h1>
+      <div className={styles.form_container}>
+        <div className={styles.left}>
+          <img className={styles.img} src="./images/login.jpg" alt="login" />
+        </div>
+        <div className={styles.right}>
+          <h2 className={styles.from_heading}>Members Log in</h2>
+          <input
+            type="text"
+            className={styles.input}
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            type="password"
+            className={styles.input}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          {/* modal */}
+          <Link
+            type="button"
+            className=""
+            data-bs-toggle="modal"
+            data-bs-target="#forgotPassword"
+          >
+            Forgot password
+          </Link>
+          <button
+            className={styles.btn}
+            onClick={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? "Logging in..." : "Log In"}
+          </button>
+          {error && <p className={styles.error}>{error}</p>}
+          <p className={styles.text}>or</p>
+          <button className={styles.google_btn} onClick={googleAuth}>
+            <img src="./images/google.png" alt="google icon" />
+            <span>Log in with Google</span>
+          </button>
+          <p className={styles.text}>
+            New Here ? <Link to="/signup">Sign Up</Link>
+          </p>
+        </div>
+      </div>
+
+      {/* modal code */}
+
+      <div
+        className="modal fade"
+        id="forgotPassword"
+        aria-hidden="true"
+        aria-labelledby="exampleModalToggleLabel"
+        tabIndex="-1"
+      >
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h1 className="modal-title fs-5" id="exampleModalToggleLabel">
+                OTP is sent to your mail!
+              </h1>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleOTP}>
+                <p>Check your email and fill OTP here</p>
+                <div className="input-group mb-3">
+                  <span className="input-group-text" id="basic-addon1">
+                    OTP
+                  </span>
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="123456"
+                    aria-label="OTP"
+                    aria-describedby="basic-addon1"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Submit
+                </button>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-primary"
+                data-bs-target="#changePassword"
+                data-bs-toggle="modal"
+                disabled={!isOtpValid}
+              >
+                Change Password
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="modal fade"
+        id="changePassword"
+        aria-hidden="true"
+        aria-labelledby="exampleModalToggleLabel2"
+        tabIndex="-1"
+      >
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h1 className="modal-title fs-5" id="exampleModalToggleLabel2">
+                Change Password
+              </h1>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleChangePass}>
+                <div class="input-group mb-3">
+                  <span class="input-group-text" id="basic-addon1">
+                    New Password
+                  </span>
+                  <input
+                    type="password"
+                    class="form-control"
+                    aria-describedby="basic-addon1"
+                  />
+                </div>
+                <div class="input-group mb-3">
+                  <span class="input-group-text" id="basic-addon1">
+                    Confirm Password
+                  </span>
+                  <input
+                    type="password"
+                    class="form-control"
+                    aria-describedby="basic-addon1"
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Change
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Login;
