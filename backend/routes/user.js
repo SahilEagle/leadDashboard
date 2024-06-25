@@ -1,15 +1,14 @@
 import { Router } from 'express';
 import User from '../model/User.js';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
-import { validateSignup, validateLogin, validateForgotPassword, validateChangePassword } from '../validation/validateUser.js';
+import { validateSignup, validateLogin, validateForgotPassword, validateChangePassword, validateOTP } from '../validation/validateUser.js';
 
 const router = Router();
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
-    host:'smtp.gmail.com',
+    host: 'smtp.gmail.com',
     auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD
@@ -53,16 +52,10 @@ router.post('/login', validateLogin, async (req, res) => {
         }
 
         // Validate password
-        const isPasswordValid = bcrypt.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
-
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        // Set token as cookie
-        res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days validity
 
         res.status(200).json({ message: 'Login successful', user: { name: user.name, email: user.email } });
     } catch (error) {
@@ -72,11 +65,11 @@ router.post('/login', validateLogin, async (req, res) => {
 });
 
 // api/user/forgot-password
-router.put('/forgot-password', validateForgotPassword, async (req, res) => {
-    const { email } = req.body;
+router.put('/send-email', validateForgotPassword, async (req, res) => {
+    const { forgotEmail } = req.body;
 
     try {
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ email: forgotEmail });
 
         if (!existingUser) {
             return res.status(404).json({ error: 'User not found with that email' });
@@ -86,16 +79,13 @@ router.put('/forgot-password', validateForgotPassword, async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
 
         // Save OTP to user document in database
-        await User.findOneAndUpdate(
-            { email },
-            { otp },
-            { new: true }
-        );
+        existingUser.otp = otp;
+        await existingUser.save();
 
         // Send OTP to user's email
         const mailOptions = {
             from: process.env.EMAIL_USERNAME,
-            to: email,
+            to: forgotEmail,
             subject: 'OTP for Forgot Password',
             text: `Your OTP for Forgot Password is: ${otp}`
         };
@@ -106,6 +96,29 @@ router.put('/forgot-password', validateForgotPassword, async (req, res) => {
     } catch (error) {
         console.error('Error in forgot password:', error);
         res.status(500).json({ message: 'Failed to process request' });
+    }
+});
+
+router.put('/verify-otp', validateOTP, async (req, res) => {
+    const { email, otp } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.otp.toString() !== otp.toString()) {
+            return res.status(400).json({ message: 'Invalid OTP' });
+        }
+        
+        await user.save();
+
+        res.status(200).json({ message: 'OTP verified successfully' });
+    } catch (error) {
+        console.error('Error in verifying OTP:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
 
@@ -125,7 +138,7 @@ router.put('/change-password', validateChangePassword, async (req, res) => {
         user.password = hashedPassword;
         user.otp = undefined; // Clear OTP after successful password change
         await user.save();
-
+        
         res.status(200).json({ message: 'Password updated successfully' });
     } catch (error) {
         console.error('Error in changing password:', error);

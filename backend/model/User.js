@@ -31,15 +31,6 @@ userSchema.methods.comparePassword = async function (password) {
     return await bcrypt.compare(password, user.password);
 };
 
-// Method to generate JWT token
-userSchema.methods.generateAuthToken = function () {
-    const user = this;
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: '7d', // Token expires in 7 days
-    });
-    return token;
-};
-
 const User = mongoose.model('User', userSchema);
 
 export default User;

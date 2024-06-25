@@ -38,17 +38,39 @@ const validateLogin = (req, res, next) => {
 };
 
 const validateForgotPassword = (req, res, next) => {
-    const { email } = req.body;
+    const { forgotEmail } = req.body
 
-    if (!validator.isEmail(email)) {
+    if (!validator.isEmail(forgotEmail)) {
         return res.status(400).json({ message: 'Invalid email format' });
     }
 
     next();
 };
 
+const validateOTP = (req, res, next) => {
+    const { email, otp } = req.body;
+
+    if (!validator.isEmail(email)) {
+        return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    if (!validator.isNumeric(otp)) {
+        return res.status(400).json({ message: 'Invalid OTP format' });
+    }
+
+    if(otp.length < 6){
+        return res.status(400).json({message: "OTP is less than 6"});
+    }
+
+    if(otp.length > 6){
+        return res.status(400).json({message: "OTP is too large"});
+    }
+
+    next();
+};
+
 const validateChangePassword = (req, res, next) => {
-    const { email, otp, newPassword, confirmPassword } = req.body;
+    const { email, newPassword, confirmPassword } = req.body;
 
     if (!validator.isEmail(email)) {
         return res.status(400).json({ message: 'Invalid email format' });
@@ -65,4 +87,4 @@ const validateChangePassword = (req, res, next) => {
     next();
 };
 
-export { validateSignup, validateLogin, validateForgotPassword, validateChangePassword };
+export { validateSignup, validateLogin, validateForgotPassword, validateOTP, validateChangePassword };

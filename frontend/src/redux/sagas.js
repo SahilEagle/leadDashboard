@@ -1,90 +1,150 @@
 import { takeLatest, call, put, all } from 'redux-saga/effects';
 import axios from 'axios';
 import {
-  // loginRequest,
-  loginSuccess,
-  loginFailure,
-  // signupRequest,
-  signupSuccess,
-  signupFailure,
-  // forgotPasswordRequest,
-  // forgotPasswordSuccess,
-  // forgotPasswordFailure,
-  // changePasswordRequest,
-  // changePasswordSuccess,
-  // changePasswordFailure,
-} from './action';;
+  LOGIN_REQUEST,
+  LOGIN_SUCCESS,
+  LOGIN_FAILURE,
+  SIGNUP_REQUEST,
+  SIGNUP_SUCCESS,
+  SIGNUP_FAILURE,
+  SEND_EMAIL_REQUEST,
+  SEND_EMAIL_SUCCESS,
+  SEND_EMAIL_FAILURE,
+  VERIFY_OTP,
+  VERIFY_OTP_SUCCESS,
+  VERIFY_OTP_FAILURE,
+  CHANGE_PASSWORD,
+  CHANGE_PASSWORD_SUCCESS,
+  CHANGE_PASSWORD_FAILURE
+} from './constants';
+import { toast } from 'react-hot-toast';
 
 function* loginSaga(action) {
-
   const { payload } = action;
-
   try {
     const response = yield call(axios.post, `${import.meta.env.VITE_BACKEND_URL}/api/user/login`, payload);
-
     if (response.status === 200) {
-      yield put(loginSuccess(response.data));
+      yield put({ type: LOGIN_SUCCESS, payload: response.data });
+      toast.success('Login successful');
     } else {
-      yield put(loginFailure('Failed to login')); // Handle other status codes if needed
+      yield put({ type: LOGIN_FAILURE, payload: 'Failed to login' });
+      toast.error('Failed to login');
     }
   } catch (error) {
-    yield put(loginFailure(error.message));
+    yield put({ type: LOGIN_FAILURE, payload: error.response.data.message });
+    toast.error(`Login failed: ${error.response.data.message}`);
   }
 }
 
 function* signupSaga(action) {
+  const { payload } = action;
   try {
-    const response = yield call(axios.post, `${import.meta.env.VITE_BACKEND_URL}/api/user/signup`, action.payload);
-
-    if(response.status === 201){
-      yield put(signupSuccess(response.data));
-    }else{
-      yield put(signupFailure("Signup Failed"));
+    const response = yield call(axios.post, `${import.meta.env.VITE_BACKEND_URL}/api/user/signup`, payload);
+    if (response.status === 201) {
+      yield put({ type: SIGNUP_SUCCESS, payload: response.data });
+      toast.success('Signup successful');
+    } else {
+      yield put({ type: SIGNUP_FAILURE, payload: 'Signup failed' });
+      toast.error('Signup failed');
     }
   } catch (error) {
-    yield put(signupFailure(error.response.data));
+    const errorMessage = error.response && error.response.data ? error.response.data.message : error.message;
+    yield put({ type: SIGNUP_FAILURE, payload: errorMessage });
+    toast.error(errorMessage);
   }
 }
 
-// function* forgotPasswordSaga(action) {
-//   try {
-//     yield call(axios.put, '/api/user/forgot-password', action.payload);
-//     yield put(forgotPasswordSuccess());
-//   } catch (error) {
-//     yield put(forgotPasswordFailure(error.response.data));
-//   }
-// }
+function* sendEmailSaga(action) {
+  const { payload } = action;
+  try {
+    toast.loading("Checking your Email...", { id: 'check' })
+    const response = yield call(axios.put, `${import.meta.env.VITE_BACKEND_URL}/api/user/send-email`, payload);
+    if (response.status === 200) {
+      yield put({ type: SEND_EMAIL_SUCCESS, payload: response.data.message });
+      toast.success('Email sent successfully', { id: 'check' });
+    } else {
+      yield put({ type: SEND_EMAIL_FAILURE, payload: 'Failed to send email' });
+      toast.error('Failed to send email', { id: 'check' });
+    }
+  } catch (error) {
+    yield put({ type: SEND_EMAIL_FAILURE, payload: error.response.data.message });
+    toast.error(error.response.data.error, {id:'check'});
+  }
+}
 
-// function* changePasswordSaga(action) {
-//   try {
-//     yield call(axios.put, '/api/user/change-password', action.payload);
-//     yield put(changePasswordSuccess());
-//   } catch (error) {
-//     yield put(changePasswordFailure(error.response.data));
-//   }
-// }
+function* verifyOtpSaga(action) {
+  const { payload } = action;
+  try {
+    const response = yield call(axios.put, `${import.meta.env.VITE_BACKEND_URL}/api/user/verify-otp`, payload);
+    if (response.status === 200) {
+      yield put({ type: VERIFY_OTP_SUCCESS, payload: response.data.message });
+      toast.success('OTP verified successfully');
+    } else {
+      yield put({ type: VERIFY_OTP_FAILURE, payload: 'Failed to verify OTP' });
+      toast.error('Failed to verify OTP');
+    }
+  } catch (error) {
+    yield put({ type: VERIFY_OTP_FAILURE, payload: error.response.data.message });
+    toast.error(`Failed to verify OTP: ${error.response.data.message}`);
+  }
+}
+
+function* changePasswordSaga(action) {
+  const { email, otp, newPassword, confirmPassword } = action.payload;
+  try {
+    const response = yield call(axios.put, `${import.meta.env.VITE_BACKEND_URL}/api/user/change-password`, {
+      email,
+      otp,
+      newPassword,
+      confirmPassword
+    });
+
+    if (response && response.status === 200) {
+      yield put({ type: CHANGE_PASSWORD_SUCCESS, payload: response.data.message });
+      toast.success('Password changed successfully');
+    } else {
+      yield put({ type: CHANGE_PASSWORD_FAILURE, payload: "Failed to change password" });
+      toast.error('Failed to change password, please try again later');
+    }
+
+  } catch (error) {
+    // Log the error to console for debugging
+    console.error('Change password error:', error);
+
+    // Update your error handling based on the actual error object structure
+    const errorMessage = error.response ? error.response.data.message : 'Unknown error occurred';
+    yield put({ type: CHANGE_PASSWORD_FAILURE, payload: errorMessage });
+    toast.error(`Failed to change password: ${errorMessage}`);
+  }
+}
+
 
 function* watchLogin() {
-  yield takeLatest('auth/loginRequest', loginSaga);
+  yield takeLatest(LOGIN_REQUEST, loginSaga);
 }
 
 function* watchSignup() {
-  yield takeLatest('auth/signupRequest', signupSaga);
+  yield takeLatest(SIGNUP_REQUEST, signupSaga);
 }
 
-// function* watchForgotPassword() {
-//   yield takeLatest('auth/forgotPasswordRequest', forgotPasswordSaga);
-// }
+function* watchSendEmail() {
+  yield takeLatest(SEND_EMAIL_REQUEST, sendEmailSaga);
+}
 
-// function* watchChangePassword() {
-//   yield takeLatest('auth/changePasswordRequest', changePasswordSaga);
-// }
+function* watchVerifyOtp() {
+  yield takeLatest(VERIFY_OTP, verifyOtpSaga);
+}
+
+function* watchChangePassword() {
+  yield takeLatest(CHANGE_PASSWORD, changePasswordSaga);
+}
 
 export default function* rootSaga() {
   yield all([
     watchLogin(),
     watchSignup(),
-    // watchForgotPassword(),
-    // watchChangePassword(),
+    watchSendEmail(),
+    watchVerifyOtp(),
+    watchChangePassword(),
   ]);
 }

@@ -1,51 +1,108 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { loginRequest } from "../../redux/action"; // Update the import
-import styles from "./styles.module.css";
 import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
+import styles from "./styles.module.css";
+import {
+  loginRequest,
+  sendEmail,
+  verifyOtp,
+  changePassword,
+} from "../../redux/action";
 
 function Login() {
   const navigate = useNavigate();
-
   const dispatch = useDispatch();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { isLoading, error, user } = useSelector((state) => state.auth);
-
+  const [forgotEmail, setForgotEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [isOtpValid, setIsOtpValid] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
-  const handleLogin = () => {
-    dispatch(loginRequest({ email, password }));
+  const { isLoading, error, user, emailSent, otpVerified, passwordChanged } =
+    useSelector((state) => state.auth);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    const payload = { email, password };
+    dispatch(loginRequest(payload));
+  };
+
+  const handleForgotEmail = (e) => {
+    e.preventDefault();
+    const payload = { forgotEmail };
+    dispatch(sendEmail(payload));
+  };
+
+  const handleOTP = (e) => {
+    e.preventDefault();
+    const payload = { email: forgotEmail, otp };
+    dispatch(verifyOtp(payload));
+  };
+
+  const handleChangePass = (e) => {
+    e.preventDefault();
+    const payload = { email: forgotEmail, otp, newPassword, confirmPassword };
+    dispatch(changePassword(payload));
+  };
+
+  const closeModal = () => {
+    const modalElement = document.getElementById("forgotPassword");
+    const backdropElement = document.querySelector(".modal-backdrop");
+
+    if (modalElement) {
+      modalElement.classList.remove("show");
+      modalElement.style.display = "none";
+    }
+
+    if (backdropElement) {
+      backdropElement.remove();
+    }
+
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "";
+    document.body.style.paddingRight = "";
+  };
+
+  const handlePasswordChangeSuccess = () => {
+    toast.success("Password changed successfully");
+    closeModal();
+    navigate("/home");
   };
 
   useEffect(() => {
     if (user) {
       navigate("/home");
     }
-  }, [user]);
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (emailSent) {
+      setShowOtpInput(true);
+    }
+  }, [emailSent]);
+
+  useEffect(() => {
+    if (otpVerified) {
+      setShowChangePassword(true);
+    }
+  }, [otpVerified]);
+
+  useEffect(() => {
+    if (passwordChanged) {
+      handlePasswordChangeSuccess();
+    }
+  }, [passwordChanged]);
 
   const googleAuth = () => {
     window.open(
-      `${import.meta.env.VITE_BACKEND_URL}/auth/google`, // Removed `/callback` as it's typically for the callback route
+      `${import.meta.env.VITE_BACKEND_URL}/auth/google/callback`,
       "_self"
     );
-  };
-
-  const handleOTP = (e) => {
-    e.preventDefault();
-    // For demonstration, assume OTP is 123456
-    if (otp === "123456") {
-      setIsOtpValid(true);
-      console.log("OTP Validated");
-    } else {
-      alert("Invalid OTP");
-      setIsOtpValid(false);
-    }
-  };
-
-  const handleChangePass = (e) => {
-    e.preventDefault();
   };
 
   return (
@@ -72,7 +129,6 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          {/* modal */}
           <Link
             type="button"
             className=""
@@ -100,20 +156,23 @@ function Login() {
         </div>
       </div>
 
-      {/* modal code */}
-
+      {/* Forgot Password modal */}
       <div
         className="modal fade"
         id="forgotPassword"
         aria-hidden="true"
-        aria-labelledby="exampleModalToggleLabel"
+        aria-labelledby="forgotPasswordLabel"
         tabIndex="-1"
       >
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
-              <h1 className="modal-title fs-5" id="exampleModalToggleLabel">
-                OTP is sent to your mail!
+              <h1 className="modal-title fs-5" id="forgotPasswordLabel">
+                {showChangePassword
+                  ? "Change Password"
+                  : showOtpInput
+                  ? "Enter OTP"
+                  : "Enter your Email"}
               </h1>
               <button
                 type="button"
@@ -123,89 +182,79 @@ function Login() {
               ></button>
             </div>
             <div className="modal-body">
-              <form onSubmit={handleOTP}>
-                <p>Check your email and fill OTP here</p>
-                <div className="input-group mb-3">
-                  <span className="input-group-text" id="basic-addon1">
-                    OTP
-                  </span>
-                  <input
-                    type="number"
-                    className="form-control"
-                    placeholder="123456"
-                    aria-label="OTP"
-                    aria-describedby="basic-addon1"
-                    maxLength={6}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary">
-                  Submit
-                </button>
-              </form>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="btn btn-primary"
-                data-bs-target="#changePassword"
-                data-bs-toggle="modal"
-                disabled={!isOtpValid}
-              >
-                Change Password
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        className="modal fade"
-        id="changePassword"
-        aria-hidden="true"
-        aria-labelledby="exampleModalToggleLabel2"
-        tabIndex="-1"
-      >
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h1 className="modal-title fs-5" id="exampleModalToggleLabel2">
-                Change Password
-              </h1>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              ></button>
-            </div>
-            <div className="modal-body">
-              <form onSubmit={handleChangePass}>
-                <div class="input-group mb-3">
-                  <span class="input-group-text" id="basic-addon1">
-                    New Password
-                  </span>
-                  <input
-                    type="password"
-                    class="form-control"
-                    aria-describedby="basic-addon1"
-                  />
-                </div>
-                <div class="input-group mb-3">
-                  <span class="input-group-text" id="basic-addon1">
-                    Confirm Password
-                  </span>
-                  <input
-                    type="password"
-                    class="form-control"
-                    aria-describedby="basic-addon1"
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary">
-                  Change
-                </button>
-              </form>
+              {!showOtpInput && !showChangePassword && (
+                <form onSubmit={handleForgotEmail}>
+                  <div className="input-group mb-3">
+                    <span className="input-group-text" id="basic-addon1">
+                      Email
+                    </span>
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="user@gmail.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary">
+                    Send OTP
+                  </button>
+                </form>
+              )}
+              {showOtpInput && !showChangePassword && (
+                <form onSubmit={handleOTP}>
+                  <div className="input-group mb-3">
+                    <span className="input-group-text" id="basic-addon2">
+                      OTP
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary">
+                    Verify OTP
+                  </button>
+                </form>
+              )}
+              {showChangePassword && (
+                <form onSubmit={handleChangePass}>
+                  <div className="input-group mb-3">
+                    <span className="input-group-text" id="basic-addon3">
+                      New Password
+                    </span>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder="New Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="input-group mb-3">
+                    <span className="input-group-text" id="basic-addon4">
+                      Confirm Password
+                    </span>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary">
+                    Change Password
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>

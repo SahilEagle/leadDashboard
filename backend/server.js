@@ -18,7 +18,12 @@ const app = express();
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(session({ secret: 'secretShouldBeRemainSecret', resave: false, saveUninitialized: true }));
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: process.env.NODE_ENV === 'production' }
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -42,6 +47,11 @@ app.get('/logout', (req, res) => {
         if (err) { return next(err); }
         res.redirect('/');
     });
+});
+
+app.get('/auth/check-session', (req, res) => {
+    // Implement logic to check session here
+    res.status(200).json({ isAuthenticated: true }); // Example response
 });
 
 const PORT = process.env.PORT;

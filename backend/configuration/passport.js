@@ -1,12 +1,12 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import jwt from 'jsonwebtoken';
 import User from '../model/User.js';
 
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: `${process.env.BACKEND_URL}/auth/google/callback`,
+    scope: ['profile', 'email'],
 },
     async (accessToken, refreshToken, profile, done) => {
         try {
@@ -22,9 +22,7 @@ passport.use(new GoogleStrategy({
                 await user.save();
             }
 
-            const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-            return done(null, { user, token });
+            return done(null, user);
         } catch (error) {
             return done(error, null);
         }
@@ -43,3 +41,5 @@ passport.deserializeUser(async (id, done) => {
         done(error, null);
     }
 });
+
+export default passport;

@@ -8,14 +8,11 @@ function Signup() {
   const navigate = useNavigate();
 
   const dispatch = useDispatch();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { isLoading, error, user } = useSelector((state) => state.auth);
-
-  const handleSignup = () => {
-    dispatch(signupRequest({ name, email, password }));
-  };
 
   useEffect(() => {
     if (user) {
@@ -24,7 +21,20 @@ function Signup() {
   }, [user]);
 
   const googleAuth = () => {
-    window.open(`${import.meta.env.VITE_BACKEND_URL}/auth/google`, "_self");
+    window.open(
+      `${import.meta.env.VITE_BACKEND_URL}/auth/google/callback`,
+      "_self"
+    );
+  };
+
+  const handleSignup = (e) => {
+    e.preventDefault();
+    const userData = {
+      email,
+      password,
+      name,
+    };
+    dispatch(signupRequest(userData));
   };
 
   return (

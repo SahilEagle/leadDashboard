@@ -1,61 +1,96 @@
+import {
+  LOGIN_REQUEST,
+  LOGIN_SUCCESS,
+  LOGIN_FAILURE,
+
+  SIGNUP_REQUEST,
+  SIGNUP_SUCCESS,
+  SIGNUP_FAILURE,
+
+  SEND_EMAIL_REQUEST,
+  SEND_EMAIL_SUCCESS,
+  SEND_EMAIL_FAILURE,
+
+  VERIFY_OTP,
+  VERIFY_OTP_SUCCESS,
+  VERIFY_OTP_FAILURE,
+  
+  CHANGE_PASSWORD,
+  CHANGE_PASSWORD_SUCCESS,
+  CHANGE_PASSWORD_FAILURE,
+} from './constants';
+
 export const signupRequest = (userData) => ({
-    type: 'auth/signupRequest',
-    payload: userData,
+  type: SIGNUP_REQUEST,
+  payload: userData,
 });
 
 export const signupSuccess = (user) => ({
-    type: 'auth/signupSuccess',
-    payload: user,
+  type: SIGNUP_SUCCESS,
+  payload: user,
 });
 
 export const signupFailure = (error) => ({
-    type: 'auth/signupFailure',
-    payload: error,
+  type: SIGNUP_FAILURE,
+  payload: error,
 });
 
 export const loginRequest = (payload) => ({
-    type: 'auth/loginRequest',
-    payload
+  type: LOGIN_REQUEST,
+  payload,
 });
 
 export const loginSuccess = (data) => ({
-    type: 'auth/loginSuccess',
-    payload: data,
+  type: LOGIN_SUCCESS,
+  payload: data,
 });
 
 export const loginFailure = (error) => ({
-    type: 'auth/loginFailure',
-    payload: error,
+  type: LOGIN_FAILURE,
+  payload: error,
 });
 
-// export const logoutRequest = () => ({
-//     type: 'auth/logoutRequest',
-// });
+export const sendEmail = (payload) => ({
+  type: SEND_EMAIL_REQUEST,
+  payload,
+});
 
-// export const forgotPasswordRequest = (email) => ({
-//     type: 'auth/forgotPasswordRequest',
-//     payload: email,
-// });
+export const sendEmailSuccess = (message) => ({
+  type: SEND_EMAIL_SUCCESS,
+  payload: message,
+});
 
-// export const forgotPasswordSuccess = () => ({
-//     type: 'auth/forgotPasswordSuccess',
-// });
+export const sendEmailFailure = (error) => ({
+  type: SEND_EMAIL_FAILURE,
+  payload: error,
+});
 
-// export const forgotPasswordFailure = (error) => ({
-//     type: 'auth/forgotPasswordFailure',
-//     payload: error,
-// });
+export const verifyOtp = (payload) => ({
+  type: VERIFY_OTP,
+  payload,
+});
 
-// export const changePasswordRequest = (newPasswordData) => ({
-//     type: 'auth/changePasswordRequest',
-//     payload: newPasswordData,
-// });
+export const verifyOtpSuccess = (message) => ({
+  type: VERIFY_OTP_SUCCESS,
+  payload: message,
+});
 
-// export const changePasswordSuccess = () => ({
-//     type: 'auth/changePasswordSuccess',
-// });
+export const verifyOtpFailure = (error) => ({
+  type: VERIFY_OTP_FAILURE,
+  payload: error,
+});
 
-// export const changePasswordFailure = (error) => ({
-//     type: 'auth/changePasswordFailure',
-//     payload: error,
-// });
+export const changePassword = (payload) => ({
+  type: CHANGE_PASSWORD,
+  payload,
+});
+
+export const changePasswordSuccess = (message) => ({
+  type: CHANGE_PASSWORD_SUCCESS,
+  payload: message,
+});
+
+export const changePasswordFailure = (error) => ({
+  type: CHANGE_PASSWORD_FAILURE,
+  payload: error,
+});

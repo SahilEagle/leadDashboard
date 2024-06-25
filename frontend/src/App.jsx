@@ -3,18 +3,28 @@ import Login from "./pages/Login/Login";
 import Signup from "./pages/Signup/Signup";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home/Home";
+import PrivateRoute from "./pages/PrivateRoute";
 import store from "./redux/store";
 import { Provider } from "react-redux";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
     <>
+    <Toaster position="top-right" />
       <Provider store={store}>
         <Routes>
           <Route path="/" element={<Navigate to="/signup" />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/home" element={<Home />} />
+          <Route
+            path="/home"
+            element={
+              <PrivateRoute>
+                <Home />
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </Provider>
     </>
