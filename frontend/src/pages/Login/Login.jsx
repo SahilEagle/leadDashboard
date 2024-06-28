@@ -8,6 +8,7 @@ import {
   sendEmail,
   verifyOtp,
   changePassword,
+  loginSuccess,
 } from "../../redux/action";
 
 function Login() {
@@ -144,7 +145,6 @@ function Login() {
           >
             {isLoading ? "Logging in..." : "Log In"}
           </button>
-          {error && <p className={styles.error}>{error}</p>}
           <p className={styles.text}>or</p>
           <button className={styles.google_btn} onClick={googleAuth}>
             <img src="./images/google.png" alt="google icon" />

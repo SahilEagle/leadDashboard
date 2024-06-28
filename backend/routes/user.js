@@ -33,7 +33,7 @@ router.post('/signup', validateSignup, async (req, res) => {
         const newUser = new User({ email, password: hashedPassword, name });
         await newUser.save();
 
-        res.status(201).json({ message: 'User registered successfully' });
+        res.status(201).json({ message: 'User registered successfully', user: newUser });
     } catch (error) {
         console.error('Error in signup:', error);
         res.status(500).json({ message: 'Failed to register user' });
@@ -52,17 +52,35 @@ router.post('/login', validateLogin, async (req, res) => {
         }
 
         // Validate password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        res.status(200).json({ message: 'Login successful', user: { name: user.name, email: user.email } });
+        req.login(user, (err) => {
+            if (err) {
+                return res.status(400).json({ message: 'Something went wrong' });
+            }
+            return res.status(200).json({ message: 'Login successful', user: { name: user.name, email: user.email } });
+        });
     } catch (error) {
         console.error('Error in login:', error);
         res.status(500).json({ message: 'Failed to login' });
     }
 });
+
+// app.post('/programmatic-login', async (req, res, next) => {
+//     const { email } = req.body;
+//     const user = await User.findOne(email);
+
+//     req.login(user, (err) => {
+//         if (err) {
+//             return next(err);
+//         }
+
+//         return res.status(200).json({ message: 'Programmatic login successful', user });
+//     });
+// });
 
 // api/user/forgot-password
 router.put('/send-email', validateForgotPassword, async (req, res) => {
@@ -112,7 +130,7 @@ router.put('/verify-otp', validateOTP, async (req, res) => {
         if (user.otp.toString() !== otp.toString()) {
             return res.status(400).json({ message: 'Invalid OTP' });
         }
-        
+
         await user.save();
 
         res.status(200).json({ message: 'OTP verified successfully' });
@@ -138,7 +156,7 @@ router.put('/change-password', validateChangePassword, async (req, res) => {
         user.password = hashedPassword;
         user.otp = undefined; // Clear OTP after successful password change
         await user.save();
-        
+
         res.status(200).json({ message: 'Password updated successfully' });
     } catch (error) {
         console.error('Error in changing password:', error);

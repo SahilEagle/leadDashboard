@@ -37,7 +37,6 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 app.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/login', session: true }),
     (req, res) => {
-        // Successful authentication, redirect to the frontend or wherever.
         res.redirect('http://localhost:5173/home'); // Redirect to your frontend app
     }
 );
@@ -45,13 +44,18 @@ app.get('/auth/google/callback',
 app.get('/logout', (req, res) => {
     req.logout((err) => {
         if (err) { return next(err); }
-        res.redirect('/');
+        res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // Frontend URL
+        res.setHeader('Access-Control-Allow-Credentials', 'true'); // Allow credentials
+        res.redirect('http://localhost:5173/login'); // Redirect to frontend login page
     });
 });
 
 app.get('/auth/check-session', (req, res) => {
-    // Implement logic to check session here
-    res.status(200).json({ isAuthenticated: true }); // Example response
+    if (req.isAuthenticated()) {
+        res.status(200).json({ isAuthenticated: true, user: req.user });
+    } else {
+        res.status(200).json({ isAuthenticated: false });
+    }
 });
 
 const PORT = process.env.PORT;

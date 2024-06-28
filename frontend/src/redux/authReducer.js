@@ -14,6 +14,12 @@ import {
     CHANGE_PASSWORD,
     CHANGE_PASSWORD_SUCCESS,
     CHANGE_PASSWORD_FAILURE,
+    FETCH_SESSION_REQUEST,
+    FETCH_SESSION_SUCCESS,
+    FETCH_SESSION_FAILURE,
+    LOGOUT,
+    LOGOUT_SUCCESS,
+    LOGOUT_FAILURE,
 } from './constants';
 
 const initialState = {
@@ -23,6 +29,7 @@ const initialState = {
     emailSent: false,
     otpVerified: false,
     passwordChanged: false,
+    isAuthenticated: false,
 };
 
 const authReducer = (state = initialState, action) => {
@@ -31,22 +38,28 @@ const authReducer = (state = initialState, action) => {
         case SIGNUP_REQUEST:
         case SEND_EMAIL_REQUEST:
         case VERIFY_OTP:
+        case FETCH_SESSION_REQUEST:
+        case LOGOUT:
         case CHANGE_PASSWORD:
             return {
                 ...state,
                 isLoading: true,
                 error: null,
             };
-        case LOGIN_SUCCESS:
+        case FETCH_SESSION_SUCCESS:
         case SIGNUP_SUCCESS:
+        case LOGIN_SUCCESS:
             return {
                 ...state,
                 isLoading: false,
                 user: action.payload,
+                isAuthenticated: true,
             };
         case LOGIN_FAILURE:
         case SIGNUP_FAILURE:
         case SEND_EMAIL_FAILURE:
+        case FETCH_SESSION_FAILURE:
+        case LOGOUT_FAILURE:
         case VERIFY_OTP_FAILURE:
         case CHANGE_PASSWORD_FAILURE:
             return {
@@ -72,6 +85,12 @@ const authReducer = (state = initialState, action) => {
                 isLoading: false,
                 passwordChanged: true,
             };
+        case LOGOUT_SUCCESS:
+            return {
+                ...state,
+                user: null,
+                isAuthenticated: false,
+            }
         default:
             return state;
     }

@@ -1,5 +1,6 @@
 import { takeLatest, call, put, all } from 'redux-saga/effects';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   LOGIN_REQUEST,
   LOGIN_SUCCESS,
@@ -15,9 +16,55 @@ import {
   VERIFY_OTP_FAILURE,
   CHANGE_PASSWORD,
   CHANGE_PASSWORD_SUCCESS,
-  CHANGE_PASSWORD_FAILURE
+  CHANGE_PASSWORD_FAILURE,
+  FETCH_SESSION_REQUEST,
+  LOGOUT,
+  LOGOUT_SUCCESS,
+  LOGOUT_FAILURE,
+  FETCH_SESSION_SUCCESS,
+  FETCH_SESSION_FAILURE
 } from './constants';
-import { toast } from 'react-hot-toast';
+import { watchFetchSaga, watchAddVisSaga, watchDeleteSaga, watchUpdateSaga } from './visitorSaga.js';
+import { fetchSessionFailure } from './action.js';
+
+function* fetchSessionSaga() {
+  try {
+    const response = yield call(fetch, `${import.meta.env.VITE_BACKEND_URL}/auth/check-session`, { credentials: 'include' });
+    const data = yield response.json();
+    console.log(data.isAuthenticated);
+    if (data.isAuthenticated) {
+      yield put({type:FETCH_SESSION_SUCCESS, payload: response.data.user});
+    } else {
+      yield put({type: FETCH_SESSION_FAILURE, payload: "Fetching error..."});
+    }
+  } catch (error) {
+    yield put(fetchSessionFailure(error.message));
+  }
+}
+
+export function* watchFetchSession() {
+  yield takeLatest(FETCH_SESSION_REQUEST, fetchSessionSaga);
+}
+
+function* logoutSaga() {
+  try {
+    const response = yield call(axios.get, `${import.meta.env.VITE_BACKEND_URL}/logout`);
+    if (response.status === 200) {
+      yield put({ type: LOGOUT_SUCCESS });
+      window.location.href = "/login"; // Redirect to login page after logout
+    } else {
+      yield put({ type: LOGOUT_FAILURE, payload: "Failed to logout" });
+      toast.error("Failed to logout");
+    }
+  } catch (error) {
+    yield put({ type: LOGOUT_FAILURE, payload: error.message });
+    toast.error("Failed to logout");
+  }
+}
+
+export function* watchLogout() {
+  yield takeLatest(LOGOUT, logoutSaga);
+}
 
 function* loginSaga(action) {
   const { payload } = action;
@@ -68,7 +115,7 @@ function* sendEmailSaga(action) {
     }
   } catch (error) {
     yield put({ type: SEND_EMAIL_FAILURE, payload: error.response.data.message });
-    toast.error(error.response.data.error, {id:'check'});
+    toast.error(error.response.data.error, { id: 'check' });
   }
 }
 
@@ -118,7 +165,6 @@ function* changePasswordSaga(action) {
   }
 }
 
-
 function* watchLogin() {
   yield takeLatest(LOGIN_REQUEST, loginSaga);
 }
@@ -146,5 +192,14 @@ export default function* rootSaga() {
     watchSendEmail(),
     watchVerifyOtp(),
     watchChangePassword(),
+
+    watchFetchSession(),
+    watchLogout(),
+
+    watchAddVisSaga(),
+    watchDeleteSaga(),
+    watchFetchSaga(),
+    watchUpdateSaga(),
+    // watchLogout(),
   ]);
 }
